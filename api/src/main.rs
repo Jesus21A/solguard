@@ -1,6 +1,7 @@
 mod db;
 mod handlers;
 mod models;
+pub mod solana;
 
 use axum::{
     response::Html,

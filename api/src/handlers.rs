@@ -81,13 +81,34 @@ pub async fn submit_kyc(
     db.upsert_kyc(&req.wallet_id, req.kyc_level, &req.nombre, doc_hash, &now)
         .map_err(db_err)?;
 
-    let fake = fake_tx('5', &format!("{}{}", req.wallet_id, now));
+    // Intentar tx real on-chain; si falla (wallet_id no es pubkey Solana) usar hash simulado
+    let wallet_id = req.wallet_id.clone();
+    let nombre = req.nombre.clone();
+    let doc_hash_for_chain = sha256_hex(&req.documento)[..16].to_string();
+    let kyc_level_u8 = req.kyc_level as u8;
+
+    let (tx_hash, on_chain, explorer) =
+        tokio::task::spawn_blocking(move || {
+            crate::solana::submit_kyc_tx(&wallet_id, kyc_level_u8, &nombre, &doc_hash_for_chain)
+        })
+        .await
+        .unwrap()
+        .map(|sig| {
+            let url = crate::solana::explorer_tx(&sig);
+            (sig, true, url)
+        })
+        .unwrap_or_else(|_| {
+            let fake = fake_tx('5', &format!("{}{}", req.wallet_id, now));
+            (fake, false, String::new())
+        });
+
     db.insert_tx_log(
         &req.wallet_id,
         "kyc_mint_sbt",
         "ok",
         &serde_json::to_string(&json!({
-            "tx_hash": fake,
+            "tx_hash": tx_hash,
+            "on_chain": on_chain,
             "kyc_level": req.kyc_level
         }))
         .unwrap(),
@@ -99,8 +120,9 @@ pub async fn submit_kyc(
         "wallet_id": req.wallet_id,
         "kyc_level": req.kyc_level,
         "sbt_minteado": true,
-        "tx_hash_simulado": fake,
-        "nota": "En prod: Oracle Signer escribe esto on-chain en Solana devnet"
+        "on_chain": on_chain,
+        "tx_hash": tx_hash,
+        "explorer": if on_chain { explorer } else { "usa una pubkey Solana válida para tx on-chain".to_string() }
     })))
 }
 
@@ -186,7 +208,23 @@ pub async fn update_risk_score(
         .motivo
         .as_deref()
         .unwrap_or("actualización manual");
-    let fake = fake_tx('U', &format!("{}{}", req.wallet_id, now_iso()));
+    let wallet_id = req.wallet_id.clone();
+    let risk_score_u8 = req.risk_score as u8;
+
+    let (tx_hash, on_chain, explorer) =
+        tokio::task::spawn_blocking(move || {
+            crate::solana::update_risk_score_tx(&wallet_id, risk_score_u8, frozen)
+        })
+        .await
+        .unwrap()
+        .map(|sig| {
+            let url = crate::solana::explorer_tx(&sig);
+            (sig, true, url)
+        })
+        .unwrap_or_else(|_| {
+            let fake = fake_tx('U', &format!("{}{}", req.wallet_id, now_iso()));
+            (fake, false, String::new())
+        });
 
     db.insert_tx_log(
         &req.wallet_id,
@@ -196,7 +234,8 @@ pub async fn update_risk_score(
             "nuevo_score": req.risk_score,
             "frozen": frozen,
             "motivo": motivo,
-            "tx_hash": fake
+            "tx_hash": tx_hash,
+            "on_chain": on_chain,
         }))
         .unwrap(),
     )
@@ -212,7 +251,9 @@ pub async fn update_risk_score(
         "wallet_id": req.wallet_id,
         "risk_score": req.risk_score,
         "frozen": frozen,
-        "tx_hash_simulado": fake
+        "on_chain": on_chain,
+        "tx_hash": tx_hash,
+        "explorer": if on_chain { explorer } else { String::new() }
     })))
 }
 
