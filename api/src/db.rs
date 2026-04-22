@@ -73,8 +73,8 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         let mut stmt =
             conn.prepare("SELECT * FROM wallets ORDER BY created_at DESC")?;
-        stmt.query_map([], wallet_from_row)?
-            .collect::<Result<Vec<_>>>()
+        let rows = stmt.query_map([], wallet_from_row)?.collect::<Result<Vec<_>>>();
+        rows
     }
 
     pub fn get_wallet(&self, wallet_id: &str) -> Result<Option<Wallet>> {
@@ -156,13 +156,13 @@ impl Database {
             let mut stmt = conn.prepare(
                 "SELECT * FROM tx_log WHERE wallet_id = ? ORDER BY ts DESC LIMIT ?",
             )?;
-            stmt.query_map(params![id, limit], txlog_from_row)?
-                .collect()
+            let rows = stmt.query_map(params![id, limit], txlog_from_row)?.collect::<Result<Vec<_>>>();
+            rows
         } else {
             let mut stmt =
                 conn.prepare("SELECT * FROM tx_log ORDER BY ts DESC LIMIT ?")?;
-            stmt.query_map(params![limit], txlog_from_row)?
-                .collect()
+            let rows = stmt.query_map(params![limit], txlog_from_row)?.collect::<Result<Vec<_>>>();
+            rows
         }
     }
 
@@ -187,8 +187,8 @@ impl Database {
         let conn = self.conn.lock().unwrap();
         let mut stmt =
             conn.prepare("SELECT * FROM roi_reports ORDER BY created_at DESC")?;
-        stmt.query_map([], roi_from_row)?
-            .collect::<Result<Vec<_>>>()
+        let rows = stmt.query_map([], roi_from_row)?.collect::<Result<Vec<_>>>();
+        rows
     }
 
     // ── Stats ─────────────────────────────────────────────────────────────────
