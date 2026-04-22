@@ -15,7 +15,10 @@ pub mod solguard {
         doc_hash: [u8; 16],
     ) -> Result<()> {
         let record = &mut ctx.accounts.wallet_record;
-        require!(record.kyc_level == 0, SolGuardError::AlreadyVerified);
+        // init_if_needed inicializa kyc_level a 0 — solo bloqueamos si ya fue verificado
+        if record.kyc_level > 0 {
+            return err!(SolGuardError::AlreadyVerified);
+        }
 
         let clock = Clock::get()?;
         record.wallet = ctx.accounts.wallet.key();
