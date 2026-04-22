@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 // Reemplaza este ID con la pubkey de programs/solguard-keypair.json
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("9cuFsdRhYpm2JjJ1NbzA8W2nG5tSgzHto3ABt5qycsN9");
 
 #[program]
 pub mod solguard {

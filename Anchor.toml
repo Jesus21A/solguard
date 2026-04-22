@@ -6,7 +6,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-solguard = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+solguard = "9cuFsdRhYpm2JjJ1NbzA8W2nG5tSgzHto3ABt5qycsN9"
 
 [registry]
 url = "https://api.apr.dev"
