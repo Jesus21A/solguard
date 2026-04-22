@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-// Reemplaza este ID con `anchor keys generate` antes de hacer deploy
+// Reemplaza este ID con la pubkey de programs/solguard-keypair.json
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
@@ -8,7 +8,6 @@ pub mod solguard {
     use super::*;
 
     /// Registra KYC y emite un SBT (Soulbound Token) para la wallet.
-    /// En prod el `authority` sería el Oracle Signer del backend.
     pub fn submit_kyc(
         ctx: Context<SubmitKyc>,
         kyc_level: u8,
@@ -27,7 +26,6 @@ pub mod solguard {
         record.created_at = clock.unix_timestamp;
         record.nombre_hash = nombre_hash;
         record.doc_hash = doc_hash;
-        record.bump = ctx.bumps.wallet_record;
 
         emit!(KycMinted {
             wallet: ctx.accounts.wallet.key(),
@@ -64,8 +62,7 @@ pub mod solguard {
         Ok(())
     }
 
-    /// Valida si una wallet puede acceder a un juego (simula el CPI del contrato del juego).
-    /// Retorna error específico si el acceso está denegado.
+    /// Valida acceso — cualquier juego puede hacer CPI a esta instrucción.
     pub fn validate_access(ctx: Context<ValidateAccess>) -> Result<()> {
         let record = &ctx.accounts.wallet_record;
         require!(record.kyc_level > 0, SolGuardError::NoKyc);
@@ -87,7 +84,7 @@ pub struct SubmitKyc<'info> {
         bump
     )]
     pub wallet_record: Account<'info, WalletRecord>,
-    /// CHECK: Wallet del usuario — no necesita firmar para recibir el SBT
+    /// CHECK: Wallet del usuario — recibe el SBT sin necesidad de firmar
     pub wallet: UncheckedAccount<'info>,
     #[account(mut)]
     pub authority: Signer<'info>,
@@ -99,12 +96,11 @@ pub struct UpdateRiskScore<'info> {
     #[account(
         mut,
         seeds = [b"wallet_record", wallet.key().as_ref()],
-        bump = wallet_record.bump,
+        bump,
     )]
     pub wallet_record: Account<'info, WalletRecord>,
     /// CHECK: Wallet del usuario
     pub wallet: UncheckedAccount<'info>,
-    /// El oracle signer autorizado (en prod: clave del backend)
     pub oracle: Signer<'info>,
 }
 
@@ -112,7 +108,7 @@ pub struct UpdateRiskScore<'info> {
 pub struct ValidateAccess<'info> {
     #[account(
         seeds = [b"wallet_record", wallet.key().as_ref()],
-        bump = wallet_record.bump,
+        bump,
     )]
     pub wallet_record: Account<'info, WalletRecord>,
     /// CHECK: Wallet del usuario
@@ -123,19 +119,18 @@ pub struct ValidateAccess<'info> {
 
 #[account]
 pub struct WalletRecord {
-    pub wallet: Pubkey,        // 32 — clave pública del dueño
-    pub kyc_level: u8,         //  1 — 0=sin KYC, 1=básico, 2=avanzado
-    pub risk_score: u8,        //  1 — 1–10
+    pub wallet: Pubkey,        // 32
+    pub kyc_level: u8,         //  1
+    pub risk_score: u8,        //  1
     pub frozen: bool,          //  1
-    pub kyc_at: i64,           //  8 — unix timestamp
+    pub kyc_at: i64,           //  8
     pub created_at: i64,       //  8
-    pub nombre_hash: [u8; 16], // 16 — primeros 16 bytes del SHA-256 del nombre
-    pub doc_hash: [u8; 16],    // 16 — primeros 16 bytes del SHA-256 del documento
-    pub bump: u8,              //  1 — PDA bump
+    pub nombre_hash: [u8; 16], // 16
+    pub doc_hash: [u8; 16],    // 16
 }
 
 impl WalletRecord {
-    pub const LEN: usize = 32 + 1 + 1 + 1 + 8 + 8 + 16 + 16 + 1; // 84
+    pub const LEN: usize = 32 + 1 + 1 + 1 + 8 + 8 + 16 + 16; // 83
 }
 
 // ── Events ────────────────────────────────────────────────────────────────────
