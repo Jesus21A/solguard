@@ -3,6 +3,7 @@ mod handlers;
 mod models;
 
 use axum::{
+    response::Html,
     routing::{get, patch, post},
     Router,
 };
@@ -10,6 +11,10 @@ use std::sync::Arc;
 use tower_http::cors::{Any, CorsLayer};
 
 pub type AppState = Arc<db::Database>;
+
+async fn dashboard() -> Html<&'static str> {
+    Html(include_str!("../../index.html"))
+}
 
 #[tokio::main]
 async fn main() {
@@ -24,6 +29,7 @@ async fn main() {
         .allow_headers(Any);
 
     let app = Router::new()
+        .route("/dashboard", get(dashboard))
         .route("/", get(handlers::root))
         .route("/wallets", get(handlers::list_wallets))
         .route("/wallets/:wallet_id", get(handlers::get_wallet))
