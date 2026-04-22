@@ -1,0 +1,3 @@
+[workspace]
+members = ["programs/solguard", "api"]
+resolver = "2"

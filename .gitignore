@@ -1,0 +1,19 @@
+# Rust
+target/
+Cargo.lock
+
+# Solana / Anchor
+.anchor/
+dist/
+node_modules/
+**/*.so
+**/*.keypair
+
+# Base de datos local
+*.db
+*.db-shm
+*.db-wal
+
+# IDE
+.vscode/
+.idea/

@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SolGuard — Demo Hackathon</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #00e5a0;
+    --accent2: #3b82f6;
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
+
+  /* Header */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0;
+    background: rgba(10,14,26,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 100;
+  }
+  .logo { font-family: var(--mono); font-size: 15px; color: var(--accent); letter-spacing: .05em; }
+  .logo span { color: var(--muted); }
+  .network-badge {
+    font-family: var(--mono); font-size: 11px;
+    background: rgba(0,229,160,0.1); color: var(--accent);
+    border: 1px solid rgba(0,229,160,0.25);
+    padding: 4px 10px; border-radius: 20px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .dot-live { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 56px); }
+
+  /* Sidebar */
+  aside {
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 1rem;
+    position: sticky; top: 56px;
+    height: calc(100vh - 56px);
+    overflow-y: auto;
+  }
+  .nav-section { font-size: 10px; font-weight: 600; letter-spacing: .1em; color: var(--muted); margin: 1.25rem 0 .5rem; text-transform: uppercase; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 8px;
+    font-size: 13px; color: var(--muted);
+    cursor: pointer; transition: all .15s;
+    border: 1px solid transparent;
+    margin-bottom: 2px;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(0,229,160,0.08); color: var(--accent); border-color: rgba(0,229,160,0.2); }
+  .nav-icon { width: 16px; text-align: center; font-size: 14px; }
+
+  /* Main */
+  main { padding: 2rem; overflow-y: auto; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* Stats grid */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .stat-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .05em; }
+  .stat-value { font-family: var(--mono); font-size: 26px; font-weight: 700; color: var(--text); }
+  .stat-value.green { color: var(--accent); }
+  .stat-value.red { color: var(--danger); }
+  .stat-value.amber { color: var(--warn); }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .05em; text-transform: uppercase; margin-bottom: 1.25rem; }
+
+  /* Wallet list */
+  .wallet-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .wallet-row:last-child { border-bottom: none; }
+  .wallet-addr { font-family: var(--mono); font-size: 12px; color: var(--muted); flex: 1; }
+  .wallet-name { font-size: 13px; font-weight: 500; color: var(--text); min-width: 100px; }
+  .badge {
+    font-size: 10px; font-weight: 700; padding: 3px 8px;
+    border-radius: 20px; letter-spacing: .04em;
+  }
+  .badge-green { background: rgba(0,229,160,0.1); color: var(--accent); border: 1px solid rgba(0,229,160,0.2); }
+  .badge-red { background: rgba(239,68,68,0.1); color: var(--danger); border: 1px solid rgba(239,68,68,0.2); }
+  .badge-amber { background: rgba(245,158,11,0.1); color: var(--warn); border: 1px solid rgba(245,158,11,0.2); }
+  .badge-blue { background: rgba(59,130,246,0.1); color: var(--accent2); border: 1px solid rgba(59,130,246,0.2); }
+  .badge-gray { background: rgba(100,116,139,0.1); color: var(--muted); border: 1px solid rgba(100,116,139,0.2); }
+
+  /* Score bar */
+  .score-bar { display: flex; align-items: center; gap: 8px; }
+  .score-track { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+  .score-fill { height: 100%; border-radius: 2px; transition: width .4s, background .4s; }
+  .score-num { font-family: var(--mono); font-size: 12px; min-width: 24px; text-align: right; }
+
+  /* Forms */
+  .form-group { margin-bottom: 1rem; }
+  .form-label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; letter-spacing: .04em; }
+  input[type=text], input[type=number], select {
+    width: 100%; padding: 10px 12px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); font-family: var(--sans); font-size: 13px;
+    outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  input[type=range] {
+    width: 100%; accent-color: var(--accent);
+    background: transparent; height: 4px; cursor: pointer;
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 10px 20px; border-radius: 8px;
+    font-family: var(--sans); font-size: 13px; font-weight: 500;
+    cursor: pointer; border: none; transition: all .15s;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { opacity: .85; }
+  .btn-danger { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+  .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* Result box */
+  .result {
+    margin-top: 1rem; padding: 1rem;
+    border-radius: 8px; font-family: var(--mono); font-size: 12px;
+    line-height: 1.7; white-space: pre-wrap;
+    border: 1px solid var(--border); background: var(--surface2);
+    display: none;
+  }
+  .result.ok { border-color: rgba(0,229,160,0.3); color: var(--accent); }
+  .result.err { border-color: rgba(239,68,68,0.3); color: var(--danger); }
+  .result.visible { display: block; }
+
+  /* Tx log */
+  .tx-row {
+    display: flex; gap: 12px; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .tx-row:last-child { border-bottom: none; }
+  .tx-ts { font-family: var(--mono); color: var(--muted); min-width: 130px; font-size: 11px; }
+  .tx-wallet { font-family: var(--mono); color: var(--muted); font-size: 11px; flex: 1; }
+  .tx-action { color: var(--text); min-width: 130px; }
+  .tx-result { min-width: 80px; text-align: right; }
+
+  /* Demo flow */
+  .demo-step {
+    border: 1px solid var(--border);
+    border-radius: 10px; padding: 1.25rem;
+    margin-bottom: .75rem;
+    display: flex; gap: 16px; align-items: flex-start;
+  }
+  .step-num {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: rgba(0,229,160,0.1); color: var(--accent);
+    font-family: var(--mono); font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-body { flex: 1; }
+  .step-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+  .step-desc { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+  /* Section title */
+  h2 { font-size: 18px; font-weight: 600; margin-bottom: 1.5rem; color: var(--text); }
+  .subtitle { font-size: 13px; color: var(--muted); margin-top: -1rem; margin-bottom: 1.5rem; }
+
+  /* Separator */
+  .sep { height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+  /* Grid 2 col */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } .layout { grid-template-columns: 1fr; } aside { display: none; } }
+
+  /* Alert */
+  .alert {
+    padding: .75rem 1rem; border-radius: 8px;
+    font-size: 13px; margin-bottom: 1rem;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .alert-warn { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: var(--warn); }
+  .alert-ok { background: rgba(0,229,160,0.06); border: 1px solid rgba(0,229,160,0.2); color: var(--accent); }
+  .alert-err { background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.2); color: var(--danger); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">SOL<span>GUARD</span></div>
+  <div class="network-badge">
+    <div class="dot-live"></div>
+    Solana Devnet · Demo
+  </div>
+</header>
+
+<div class="layout">
+  <aside>
+    <div class="nav-section">Demo</div>
+    <div class="nav-item active" onclick="showPage('demo')">
+      <span class="nav-icon">▶</span> Flujo completo
+    </div>
+
+    <div class="nav-section">Jugadores</div>
+    <div class="nav-item" onclick="showPage('kyc')">
+      <span class="nav-icon">◎</span> Registrar KYC
+    </div>
+    <div class="nav-item" onclick="showPage('validate')">
+      <span class="nav-icon">◈</span> Validar acceso
+    </div>
+
+    <div class="nav-section">Admin</div>
+    <div class="nav-item" onclick="showPage('wallets')">
+      <span class="nav-icon">◆</span> Wallets
+    </div>
+    <div class="nav-item" onclick="showPage('risk')">
+      <span class="nav-icon">◬</span> Risk Score
+    </div>
+    <div class="nav-item" onclick="showPage('txlog')">
+      <span class="nav-icon">≡</span> Tx Log
+    </div>
+    <div class="nav-item" onclick="showPage('reports')">
+      <span class="nav-icon">⊞</span> Reportes ROI
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- DEMO FLOW -->
+    <div class="page active" id="page-demo">
+      <h2>Demo de hackathon — flujo completo</h2>
+      <p class="subtitle">3 minutos. Corre estos pasos en orden frente al jurado.</p>
+
+      <div class="demo-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Carlos hace KYC — wallet legítima</div>
+          <div class="step-desc">Va a la sección "Registrar KYC", usa la wallet de Carlos y nombre real. Al enviar, el Oracle Signer mintea el SBT on-chain (simulado).</div>
+          <button class="btn btn-ghost" style="margin-top:10px;font-size:12px" onclick="showPage('kyc')">Ir a KYC →</button>
+        </div>
+      </div>
+
+      <div class="demo-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Carlos reclama recompensas — pasa</div>
+          <div class="step-desc">En "Validar acceso", usa la wallet de Carlos. El CPI a SolGuard lee su SBT: kyc_level=1, risk_score=1, frozen=false → OK.</div>
+          <button class="btn btn-ghost" style="margin-top:10px;font-size:12px" onclick="showPage('validate')">Ir a validar →</button>
+        </div>
+      </div>
+
+      <div class="demo-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">NetworkX detecta la red smurf — score sube a 9</div>
+          <div class="step-desc">En "Risk Score", sube el score de la Wallet Smurf a 9. Esto simula que el job de Celery + NetworkX detectó el patrón estrella invertida. El Oracle Signer actualiza el SBT y genera reporte ROI.</div>
+          <button class="btn btn-ghost" style="margin-top:10px;font-size:12px" onclick="showPage('risk')">Ir a Risk Score →</button>
+        </div>
+      </div>
+
+      <div class="demo-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Smurf intenta cobrar — bloqueado</div>
+          <div class="step-desc">Vuelve a "Validar acceso", ahora con la Wallet Smurf. El CPI retorna Err(AccessDenied). La tx revierte. Los tokens no se mueven.</div>
+          <button class="btn btn-ghost" style="margin-top:10px;font-size:12px" onclick="showPage('validate')">Ir a validar →</button>
+        </div>
+      </div>
+
+      <div class="demo-step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">El estudio ve el reporte SAGRILAFT generado</div>
+          <div class="step-desc">En "Reportes ROI" aparece el reporte automático listo para entregar a la UIAF. Evidencia on-chain inmutable del bloqueo.</div>
+          <button class="btn btn-ghost" style="margin-top:10px;font-size:12px" onclick="showPage('reports')">Ver reportes →</button>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="card">
+        <div class="card-title">Wallets pre-cargadas para el demo</div>
+        <div class="wallet-row">
+          <div>
+            <div class="wallet-name">Carlos A.</div>
+            <div class="wallet-addr">7xKp3mNaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</div>
+          </div>
+          <span class="badge badge-green">KYC OK</span>
+          <span class="badge badge-blue">Score 1</span>
+        </div>
+        <div class="wallet-row">
+          <div>
+            <div class="wallet-name">Wallet Smurf</div>
+            <div class="wallet-addr">SmurfWalletCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</div>
+          </div>
+          <span class="badge badge-gray">Sin KYC</span>
+          <span class="badge badge-red">Score 9</span>
+        </div>
+        <div class="wallet-row">
+          <div>
+            <div class="wallet-name">Sin KYC</div>
+            <div class="wallet-addr">NoKycWalletDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD</div>
+          </div>
+          <span class="badge badge-gray">Sin KYC</span>
+          <span class="badge badge-blue">Score 1</span>
+        </div>
+      </div>
+
+      <div class="stats" id="stats-demo" style="margin-top:1.25rem"></div>
+    </div>
+
+    <!-- KYC -->
+    <div class="page" id="page-kyc">
+      <h2>Registrar KYC</h2>
+      <p class="subtitle">Simula el flujo de verificación de identidad + minteo del SBT on-chain.</p>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Datos del jugador</div>
+          <div class="form-group">
+            <label class="form-label">Wallet ID</label>
+            <input type="text" id="kyc-wallet" placeholder="7xKp3mNa..." value="NuevaWallet1111111111111111111111111111111">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nombre completo</label>
+            <input type="text" id="kyc-nombre" placeholder="Carlos Andrés López" value="Nuevo Jugador">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Número de cédula</label>
+            <input type="text" id="kyc-doc" placeholder="1023456789" value="9876543210">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nivel KYC</label>
+            <select id="kyc-level">
+              <option value="1">1 — Básico (cédula)</option>
+              <option value="2">2 — Avanzado (cédula + selfie + PEP)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="submitKyc()">Enviar KYC y mintear SBT</button>
+          <div class="result" id="kyc-result"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">¿Qué pasa por dentro?</div>
+          <div class="demo-step" style="border:none;padding:.5rem 0">
+            <div class="step-num" style="width:22px;height:22px;font-size:11px">1</div>
+            <div class="step-body"><div class="step-title" style="font-size:12px">KYC Service valida el documento</div><div class="step-desc">Guarda nombre + hash_doc en PostgreSQL — nunca on-chain</div></div>
+          </div>
+          <div class="demo-step" style="border:none;padding:.5rem 0">
+            <div class="step-num" style="width:22px;height:22px;font-size:11px">2</div>
+            <div class="step-body"><div class="step-title" style="font-size:12px">Oracle Signer firma la tx</div><div class="step-desc">Usa la keypair autorizada (en prod: HSM / AWS KMS)</div></div>
+          </div>
+          <div class="demo-step" style="border:none;padding:.5rem 0">
+            <div class="step-num" style="width:22px;height:22px;font-size:11px">3</div>
+            <div class="step-body"><div class="step-title" style="font-size:12px">SBT minteado on-chain</div><div class="step-desc">Soulbound Token con kyc_level y risk_score. No transferible.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VALIDATE -->
+    <div class="page" id="page-validate">
+      <h2>Validar acceso — CPI simulado</h2>
+      <p class="subtitle">Simula la llamada que haría el contrato de CryptoArena al programa SolGuard.</p>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Simular claim_rewards</div>
+          <div class="form-group">
+            <label class="form-label">Wallet del jugador</label>
+            <select id="val-wallet">
+              <option value="7xKp3mNaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA">Carlos A. — legítimo</option>
+              <option value="SmurfWalletCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC">Wallet Smurf — bloqueada</option>
+              <option value="NoKycWalletDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD">Sin KYC — bloqueada</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Acción del juego</label>
+            <select id="val-accion">
+              <option>claim_rewards</option>
+              <option>marketplace_buy</option>
+              <option>withdraw_tokens</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="validateAccess()">Llamar validate_access →</button>
+          <div class="result" id="val-result"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Estado del SBT</div>
+          <div id="sbt-display" style="color:var(--muted);font-size:13px">Selecciona una wallet para ver su SBT...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WALLETS -->
+    <div class="page" id="page-wallets">
+      <h2>Wallets registradas</h2>
+      <p class="subtitle">Estado actual de todos los SBTs on-chain.</p>
+      <div class="card">
+        <div id="wallets-list" style="color:var(--muted);font-size:13px">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- RISK SCORE -->
+    <div class="page" id="page-risk">
+      <h2>Risk Score — Oracle Signer</h2>
+      <p class="subtitle">Simula el job de Celery + NetworkX actualizando el score on-chain.</p>
+      <div class="grid2">
+        <div class="card">
+          <div class="card-title">Actualizar score</div>
+          <div class="form-group">
+            <label class="form-label">Wallet</label>
+            <select id="risk-wallet">
+              <option value="7xKp3mNaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA">Carlos A.</option>
+              <option value="SmurfWalletCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC">Wallet Smurf</option>
+              <option value="NoKycWalletDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD">Sin KYC</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Risk Score: <span id="risk-score-val" style="color:var(--accent);font-family:var(--mono)">5</span> / 10</label>
+            <input type="range" id="risk-score" min="1" max="10" value="5" step="1" oninput="updateScoreLabel(this.value)">
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px">
+              <span>1 — limpio</span><span>7+ → congela</span><span>10 — máximo</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Motivo (para el reporte)</label>
+            <input type="text" id="risk-motivo" placeholder="smurfing_detectado" value="estrella_invertida_networkx">
+          </div>
+          <button class="btn btn-primary" onclick="updateRisk()">Actualizar on-chain</button>
+          <div class="result" id="risk-result"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Reglas automáticas</div>
+          <div style="font-size:13px;line-height:2;color:var(--muted)">
+            <div><span style="color:var(--accent);font-family:var(--mono)">1–3</span> &nbsp;· Limpio — acceso total</div>
+            <div><span style="color:var(--accent2);font-family:var(--mono)">4–6</span> &nbsp;· Observado — acceso limitado</div>
+            <div><span style="color:var(--warn);font-family:var(--mono)">7–8</span> &nbsp;· Alto riesgo — tx bloqueadas</div>
+            <div><span style="color:var(--danger);font-family:var(--mono)">9–10</span> · Congelado — reporte ROI automático</div>
+          </div>
+          <div class="sep"></div>
+          <div style="font-size:12px;color:var(--muted);line-height:1.6">
+            Score ≥ 7 activa congelamiento automático y genera el reporte ROI para la UIAF / SAGRILAFT.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TX LOG -->
+    <div class="page" id="page-txlog">
+      <h2>Transaction Log</h2>
+      <p class="subtitle">Registro de todas las acciones — lo que quedaría inmutable on-chain.</p>
+      <div class="card">
+        <div id="txlog-list" style="color:var(--muted);font-size:13px">Cargando...</div>
+      </div>
+    </div>
+
+    <!-- REPORTS -->
+    <div class="page" id="page-reports">
+      <h2>Reportes ROI — SAGRILAFT / UIAF</h2>
+      <p class="subtitle">Generados automáticamente cuando el risk score supera el umbral.</p>
+      <div id="reports-list" style="color:var(--muted);font-size:13px">Cargando...</div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+
+// ── Navegación ────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.trim().toLowerCase().includes(id.slice(0,4))) n.classList.add('active');
+  });
+  if (id === 'demo') loadStats();
+  if (id === 'wallets') loadWallets();
+  if (id === 'txlog') loadTxLog();
+  if (id === 'reports') loadReports();
+  if (id === 'validate') loadSbt();
+}
+
+// ── API calls ─────────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: { 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(API + path, opts);
+  const data = await r.json();
+  if (!r.ok) throw data;
+  return data;
+}
+
+function showResult(elId, data, isError) {
+  const el = document.getElementById(elId);
+  el.className = 'result visible ' + (isError ? 'err' : 'ok');
+  el.textContent = JSON.stringify(data, null, 2);
+}
+
+// ── KYC ──────────────────────────────────────────────────────────────────────
+async function submitKyc() {
+  try {
+    const data = await api('POST', '/kyc', {
+      wallet_id: document.getElementById('kyc-wallet').value,
+      nombre: document.getElementById('kyc-nombre').value,
+      documento: document.getElementById('kyc-doc').value,
+      kyc_level: parseInt(document.getElementById('kyc-level').value)
+    });
+    showResult('kyc-result', data, false);
+  } catch(e) { showResult('kyc-result', e, true); }
+}
+
+// ── Validate ──────────────────────────────────────────────────────────────────
+async function validateAccess() {
+  const wallet = document.getElementById('val-wallet').value;
+  try {
+    const data = await api('POST', '/validate-access', {
+      wallet_id: wallet,
+      accion: document.getElementById('val-accion').value
+    });
+    showResult('val-result', data, false);
+  } catch(e) { showResult('val-result', e.detail || e, true); }
+}
+
+async function loadSbt() {
+  const sel = document.getElementById('val-wallet');
+  sel.onchange = async () => {
+    const wallet = sel.value;
+    try {
+      const d = await api('GET', '/wallets/' + wallet);
+      renderSbt(d);
+    } catch(e) {}
+  };
+  sel.dispatchEvent(new Event('change'));
+}
+
+function renderSbt(d) {
+  const scoreColor = d.risk_score >= 7 ? 'var(--danger)' : d.risk_score >= 4 ? 'var(--warn)' : 'var(--accent)';
+  const kycBadge = d.kyc_level > 0
+    ? `<span class="badge badge-green">KYC nivel ${d.kyc_level}</span>`
+    : `<span class="badge badge-red">Sin KYC</span>`;
+  const frozenBadge = d.frozen
+    ? `<span class="badge badge-red">CONGELADA</span>`
+    : `<span class="badge badge-green">Activa</span>`;
+  document.getElementById('sbt-display').innerHTML = `
+    <div style="font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:1rem">ComplianceSBT on-chain</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1rem">${kycBadge}${frozenBadge}</div>
+    <div style="margin-bottom:1rem">
+      <div class="form-label">Risk Score</div>
+      <div class="score-bar">
+        <div class="score-track"><div class="score-fill" style="width:${d.risk_score*10}%;background:${scoreColor}"></div></div>
+        <div class="score-num" style="color:${scoreColor}">${d.risk_score}/10</div>
+      </div>
+    </div>
+    <div style="font-family:var(--mono);font-size:11px;color:var(--muted);line-height:2">
+      owner: ${d.wallet_id.slice(0,16)}...<br>
+      kyc_level: ${d.kyc_level}<br>
+      risk_score: ${d.risk_score}<br>
+      frozen: ${d.frozen ? 'true' : 'false'}
+    </div>`;
+}
+
+// ── Wallets ───────────────────────────────────────────────────────────────────
+async function loadWallets() {
+  const el = document.getElementById('wallets-list');
+  try {
+    const wallets = await api('GET', '/wallets');
+    el.innerHTML = wallets.map(w => {
+      const scoreColor = w.risk_score >= 7 ? 'var(--danger)' : w.risk_score >= 4 ? 'var(--warn)' : 'var(--accent)';
+      return `<div class="wallet-row">
+        <div style="flex:1">
+          <div class="wallet-name">${w.nombre || 'Anónimo'}</div>
+          <div class="wallet-addr">${w.wallet_id.slice(0,32)}...</div>
+        </div>
+        ${w.kyc_level > 0 ? `<span class="badge badge-green">KYC ${w.kyc_level}</span>` : `<span class="badge badge-gray">Sin KYC</span>`}
+        ${w.frozen ? `<span class="badge badge-red">Congelada</span>` : ''}
+        <div class="score-bar" style="width:120px">
+          <div class="score-track"><div class="score-fill" style="width:${w.risk_score*10}%;background:${scoreColor}"></div></div>
+          <div class="score-num" style="color:${scoreColor}">${w.risk_score}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) { el.textContent = 'Error cargando wallets. ¿Está corriendo la API?'; }
+}
+
+// ── Risk Score ────────────────────────────────────────────────────────────────
+function updateScoreLabel(v) {
+  const el = document.getElementById('risk-score-val');
+  el.textContent = v;
+  const color = v >= 7 ? 'var(--danger)' : v >= 4 ? 'var(--warn)' : 'var(--accent)';
+  el.style.color = color;
+}
+
+async function updateRisk() {
+  try {
+    const score = parseInt(document.getElementById('risk-score').value);
+    const data = await api('PATCH', '/risk-score', {
+      wallet_id: document.getElementById('risk-wallet').value,
+      risk_score: score,
+      motivo: document.getElementById('risk-motivo').value
+    });
+    showResult('risk-result', data, false);
+  } catch(e) { showResult('risk-result', e.detail || e, true); }
+}
+
+// ── Tx Log ────────────────────────────────────────────────────────────────────
+async function loadTxLog() {
+  const el = document.getElementById('txlog-list');
+  try {
+    const logs = await api('GET', '/tx-log?limit=30');
+    if (!logs.length) { el.textContent = 'Sin transacciones aún.'; return; }
+    el.innerHTML = `
+      <div class="tx-row" style="font-size:11px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border)">
+        <div class="tx-ts">Timestamp</div>
+        <div class="tx-wallet">Wallet</div>
+        <div class="tx-action">Acción</div>
+        <div class="tx-result">Resultado</div>
+      </div>` +
+      logs.map(l => `<div class="tx-row">
+        <div class="tx-ts">${l.ts}</div>
+        <div class="tx-wallet">${l.wallet_id.slice(0,14)}...</div>
+        <div class="tx-action">${l.accion}</div>
+        <div class="tx-result">${l.resultado === 'ok' || l.resultado === 'permitido'
+          ? `<span class="badge badge-green">${l.resultado}</span>`
+          : `<span class="badge badge-red">${l.resultado}</span>`}</div>
+      </div>`).join('');
+  } catch(e) { el.textContent = 'Error. ¿Está corriendo la API en localhost:8000?'; }
+}
+
+// ── Reports ───────────────────────────────────────────────────────────────────
+async function loadReports() {
+  const el = document.getElementById('reports-list');
+  try {
+    const reports = await api('GET', '/roi-reports');
+    if (!reports.length) { el.innerHTML = '<div class="card" style="color:var(--muted);font-size:13px">Sin reportes generados aún.</div>'; return; }
+    el.innerHTML = reports.map(r => `
+      <div class="card" style="margin-bottom:1rem">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+          <div style="font-size:15px;font-weight:600">Reporte ROI #${r.id}</div>
+          <span class="badge badge-amber">${r.estado}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem">
+          <div><div class="stat-label">Wallet</div><div style="font-family:var(--mono);font-size:11px;color:var(--muted)">${r.wallet_id.slice(0,16)}...</div></div>
+          <div><div class="stat-label">Monto USDC</div><div style="font-size:18px;font-weight:700;color:var(--danger)">$${r.monto_usdc.toLocaleString()}</div></div>
+          <div><div class="stat-label">Wallets en red</div><div style="font-size:18px;font-weight:700;color:var(--warn)">${r.n_wallets_red}</div></div>
+        </div>
+        <div class="sep" style="margin:.75rem 0"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <span class="badge badge-red">Patrón: ${r.patron}</span>
+          <span class="badge badge-gray">${r.created_at}</span>
+          <span class="badge badge-amber">SAGRILAFT · pendiente UIAF</span>
+        </div>
+      </div>`).join('');
+  } catch(e) { el.innerHTML = '<div class="card" style="color:var(--danger);font-size:13px">Error cargando reportes. ¿Corre la API?</div>'; }
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const s = await api('GET', '/stats');
+    document.getElementById('stats-demo').innerHTML = `
+      <div class="stat"><div class="stat-label">Wallets</div><div class="stat-value">${s.wallets_total}</div></div>
+      <div class="stat"><div class="stat-label">Con KYC</div><div class="stat-value green">${s.wallets_kyc_ok}</div></div>
+      <div class="stat"><div class="stat-label">Bloqueadas</div><div class="stat-value red">${s.tx_bloqueadas}</div></div>
+      <div class="stat"><div class="stat-label">Congeladas</div><div class="stat-value amber">${s.wallets_frozen}</div></div>
+      <div class="stat"><div class="stat-label">Reportes ROI</div><div class="stat-value amber">${s.reportes_roi}</div></div>
+    `;
+  } catch(e) {
+    document.getElementById('stats-demo').innerHTML = `
+      <div class="alert alert-warn">⚠ API no disponible en localhost:8000. Corre: <code>uvicorn main:app --reload</code></div>`;
+  }
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+loadStats();
+</script>
+</body>
+</html>
