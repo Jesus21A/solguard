@@ -1,3 +1,4 @@
+mod config;
 mod db;
 mod handlers;
 mod models;
@@ -19,10 +20,13 @@ async fn dashboard() -> Html<&'static str> {
 
 #[tokio::main]
 async fn main() {
+    let cfg = config::Config::load();
+
     let db = Arc::new(
-        db::Database::new("solguard.db").expect("No se pudo abrir la base de datos"),
+        db::Database::new(&cfg.database_url).expect("No se pudo abrir la base de datos"),
     );
-    db.init().expect("No se pudo inicializar la base de datos");
+    db.init(cfg.seed_demo_data)
+        .expect("No se pudo inicializar la base de datos");
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -43,10 +47,14 @@ async fn main() {
         .layer(cors)
         .with_state(db);
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8000")
-        .await
-        .expect("No se pudo bindear el puerto 8000");
+    let addr = format!("0.0.0.0:{}", cfg.port);
+    println!("SolGuard API corriendo en http://{}", addr);
+    println!("  RPC:     {}", cfg.solana_rpc_url);
+    println!("  Program: {}", cfg.solana_program_id);
 
-    println!("SolGuard API (Rust) corriendo en http://0.0.0.0:8000");
+    let listener = tokio::net::TcpListener::bind(&addr)
+        .await
+        .unwrap_or_else(|_| panic!("No se pudo bindear {}", addr));
+
     axum::serve(listener, app).await.unwrap();
 }

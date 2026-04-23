@@ -17,7 +17,7 @@ impl Database {
         })
     }
 
-    pub fn init(&self) -> Result<()> {
+    pub fn init(&self, seed_demo: bool) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         conn.execute_batch(
             r#"
@@ -51,19 +51,27 @@ impl Database {
                 created_at      TEXT DEFAULT (datetime('now'))
             );
 
-            INSERT OR IGNORE INTO wallets (wallet_id, kyc_level, risk_score, frozen, nombre, documento)
-            VALUES ('7xKp3mNaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 1, 1, 0, 'Carlos A.', 'CC-1023456789');
-
-            INSERT OR IGNORE INTO wallets (wallet_id, kyc_level, risk_score, frozen, nombre, documento)
-            VALUES ('SmurfWalletCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', 0, 9, 1, NULL, NULL);
-
-            INSERT OR IGNORE INTO wallets (wallet_id, kyc_level, risk_score, frozen, nombre, documento)
-            VALUES ('NoKycWalletDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', 0, 1, 0, NULL, NULL);
-
-            INSERT OR IGNORE INTO roi_reports (id, wallet_id, monto_usdc, n_wallets_red, patron)
-            VALUES (1, 'SmurfWalletCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', 8400, 47, 'estrella_invertida');
             "#,
         )?;
+
+        if seed_demo {
+            conn.execute_batch(
+                r#"
+                INSERT OR IGNORE INTO wallets (wallet_id, kyc_level, risk_score, frozen, nombre, documento)
+                VALUES ('7xKp3mNaAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 1, 1, 0, 'Carlos A.', 'CC-1023456789');
+
+                INSERT OR IGNORE INTO wallets (wallet_id, kyc_level, risk_score, frozen, nombre, documento)
+                VALUES ('SmurfWalletCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', 0, 9, 1, NULL, NULL);
+
+                INSERT OR IGNORE INTO wallets (wallet_id, kyc_level, risk_score, frozen, nombre, documento)
+                VALUES ('NoKycWalletDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD', 0, 1, 0, NULL, NULL);
+
+                INSERT OR IGNORE INTO roi_reports (id, wallet_id, monto_usdc, n_wallets_red, patron)
+                VALUES (1, 'SmurfWalletCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC', 8400, 47, 'estrella_invertida');
+                "#,
+            )?;
+        }
+
         Ok(())
     }
 

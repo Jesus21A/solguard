@@ -9,6 +9,9 @@ node_modules/
 **/*.so
 **/*.keypair
 
+# Variables de entorno — nunca subir al repo
+.env
+
 # Base de datos local
 *.db
 *.db-shm

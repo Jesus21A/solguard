@@ -11,15 +11,14 @@ use solana_sdk::{
 };
 use std::str::FromStr;
 
-pub const PROGRAM_ID: &str = "9cuFsdRhYpm2JjJ1NbzA8W2nG5tSgzHto3ABt5qycsN9";
-const RPC_URL: &str = "https://api.devnet.solana.com";
-const ORACLE_KEYPAIR_PATH: &str = "/home/codespace/.config/solana/id.json";
+fn cfg() -> crate::config::Config {
+    crate::config::Config::load()
+}
 
 pub fn explorer_tx(sig: &str) -> String {
-    format!(
-        "https://explorer.solana.com/tx/{}?cluster=devnet",
-        sig
-    )
+    let rpc = cfg().solana_rpc_url;
+    let cluster = if rpc.contains("mainnet") { "mainnet" } else { "devnet" };
+    format!("https://explorer.solana.com/tx/{}?cluster={}", sig, cluster)
 }
 
 // Anchor discriminator = SHA256("global:{name}")[..8]
@@ -30,8 +29,9 @@ fn discriminator(name: &str) -> [u8; 8] {
 }
 
 fn load_oracle() -> Result<Keypair, String> {
-    let data = std::fs::read_to_string(ORACLE_KEYPAIR_PATH)
-        .map_err(|e| format!("keypair no encontrado: {}", e))?;
+    let path = cfg().oracle_keypair_path;
+    let data = std::fs::read_to_string(&path)
+        .map_err(|e| format!("keypair no encontrado en {}: {}", path, e))?;
     let bytes: Vec<u8> =
         serde_json::from_str(&data).map_err(|e| format!("keypair inválido: {}", e))?;
     Keypair::from_bytes(&bytes).map_err(|e| format!("keypair error: {}", e))
@@ -48,7 +48,7 @@ fn send_ix(
     signer: &Keypair,
 ) -> Result<String, String> {
     let client =
-        RpcClient::new_with_commitment(RPC_URL.to_string(), CommitmentConfig::confirmed());
+        RpcClient::new_with_commitment(cfg().solana_rpc_url, CommitmentConfig::confirmed());
     let blockhash = client
         .get_latest_blockhash()
         .map_err(|e| format!("RPC error: {}", e))?;
@@ -73,7 +73,9 @@ pub fn submit_kyc_tx(
     nombre: &str,
     doc_hash_hex: &str,
 ) -> Result<String, String> {
-    let program_id = Pubkey::from_str(PROGRAM_ID).unwrap();
+    let c = cfg();
+    let program_id = Pubkey::from_str(&c.solana_program_id)
+        .map_err(|e| format!("SOLANA_PROGRAM_ID inválido: {}", e))?;
     let wallet_pubkey = Pubkey::from_str(wallet_id)
         .map_err(|_| "wallet_id no es una pubkey Solana válida".to_string())?;
     let oracle = load_oracle()?;
@@ -110,7 +112,9 @@ pub fn update_risk_score_tx(
     risk_score: u8,
     frozen: bool,
 ) -> Result<String, String> {
-    let program_id = Pubkey::from_str(PROGRAM_ID).unwrap();
+    let c = cfg();
+    let program_id = Pubkey::from_str(&c.solana_program_id)
+        .map_err(|e| format!("SOLANA_PROGRAM_ID inválido: {}", e))?;
     let wallet_pubkey = Pubkey::from_str(wallet_id)
         .map_err(|_| "wallet_id no es una pubkey Solana válida".to_string())?;
     let oracle = load_oracle()?;
