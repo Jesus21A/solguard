@@ -8,6 +8,9 @@ dist/
 node_modules/
 **/*.so
 **/*.keypair
+**/*-keypair.json
+**/*keypair*.json
+wallet.json
 
 # Variables de entorno — nunca subir al repo
 .env
