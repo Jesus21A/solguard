@@ -84,7 +84,7 @@ pub async fn submit_kyc(
     // Intentar tx real on-chain; si falla (wallet_id no es pubkey Solana) usar hash simulado
     let wallet_id = req.wallet_id.clone();
     let nombre = req.nombre.clone();
-    let doc_hash_for_chain = sha256_hex(&req.documento)[..16].to_string();
+    let doc_hash_for_chain = sha256_hex(&req.documento)[..32].to_string(); // 32 hex chars = 16 bytes
     let kyc_level_u8 = req.kyc_level as u8;
 
     let (tx_hash, on_chain, explorer) =
